@@ -45,7 +45,7 @@ class Robot:
         #Вычисляем новые значения
         self.path = (self.LeftMotor.theta + self.RightMotor.theta) * self.wheeRadius / 2  # вычисление пройденного пути
         self.angle = self.angle0 + (self.RightMotor.theta - self.LeftMotor.theta) * self.wheeRadius / self.base  # вычисление курсового угла
-        self.angle = angleNormal180(self.angle)
+        self.angle = angleNormal(self.angle)
         self.x = lastX + (self.path - lastPath) * math.cos(self.angle)  # вычисление координаты X
         self.y = lastY + (self.path - lastPath) * math.sin(self.angle)  # вычисление координаты Y
 
@@ -54,7 +54,7 @@ class Robot:
     #Поворот в указанную ориентацию при помощи ПИД-регулятора
     #Возвращает массив с историей регулирования для построения графика
     def rotateToAngle(self, purposeAngle):
-        purposeAngle = angleNormal180(purposeAngle)
+        purposeAngle = angleNormal(purposeAngle)
         Kp = 5
         Ki = 0
         Kd = 0
@@ -74,9 +74,9 @@ class Robot:
             distanceError = dist([self.x, self.y], [targetX, targetY])
             if distanceError < MOVE_ERROR:
                 break
-            bearing = -math.atan2(self.y - targetY, targetX - self.x)
-            bearing = angleNormal180(bearing)
+            bearing = math.atan2(targetY - self.y, targetX - self.x)
             courseAngle = bearing - self.angle
+            courseAngle = angleNormal180(courseAngle)
             control_l = 8 * math.cos(courseAngle) * math.tanh(distanceError) - 5 * courseAngle
             control_r = 8 * math.cos(courseAngle) * math.tanh(distanceError) + 5 * courseAngle
             self.drive(control_l, control_r)
@@ -98,3 +98,6 @@ def angleNormal180(angle):
     if (angle < 0.0):
         angle += math.pi * 2.0
     return angle - math.pi
+#Нормализация углы тупым остатком от деления - эффективно для устронения проблемы перхода PID регулятора
+def angleNormal(angle):
+    return math.fmod(angle, math.pi * 4.0)
